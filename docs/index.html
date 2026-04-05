@@ -1,0 +1,461 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GitHub Analytics — Data Analysis Project</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<style>
+  :root {
+    --blue: #0969DA; --green: #1A7F37; --red: #CF222E;
+    --purple: #8250DF; --amber: #9A6700; --gray: #57606A;
+    --bg: #ffffff; --bg2: #f6f8fa; --bg3: #eaeef2;
+    --text: #24292f; --text2: #57606a; --text3: #8c959f;
+    --border: #d0d7de; --border2: #eaeef2;
+    --radius: 6px; --radius-lg: 10px;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #0d1117; --bg2: #161b22; --bg3: #21262d;
+      --text: #e6edf3; --text2: #8d96a0; --text3: #6e7681;
+      --border: #30363d; --border2: #21262d;
+    }
+  }
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; background: var(--bg); color: var(--text); font-size: 14px; line-height: 1.6; }
+
+  /* NAV */
+  nav { position: sticky; top: 0; z-index: 100; background: var(--bg); border-bottom: 1px solid var(--border); padding: 0 24px; display: flex; align-items: center; gap: 24px; height: 56px; }
+  .nav-logo { display: flex; align-items: center; gap: 8px; font-weight: 600; font-size: 15px; color: var(--text); text-decoration: none; }
+  .nav-logo svg { width: 24px; height: 24px; fill: var(--text); }
+  .nav-links { display: flex; gap: 4px; flex: 1; }
+  .nav-link { padding: 6px 12px; border-radius: var(--radius); color: var(--text2); text-decoration: none; font-size: 13px; transition: background .15s, color .15s; cursor: pointer; border: none; background: none; font-family: inherit; }
+  .nav-link:hover, .nav-link.active { background: var(--bg3); color: var(--text); }
+  .nav-badge { background: var(--blue); color: #fff; font-size: 11px; padding: 2px 8px; border-radius: 20px; font-weight: 600; }
+
+  /* HERO */
+  .hero { background: var(--bg2); border-bottom: 1px solid var(--border); padding: 64px 24px 48px; text-align: center; }
+  .hero-eyebrow { display: inline-flex; align-items: center; gap: 6px; background: var(--bg3); border: 1px solid var(--border); border-radius: 20px; padding: 4px 12px; font-size: 12px; color: var(--text2); margin-bottom: 20px; }
+  .hero-eyebrow-dot { width: 6px; height: 6px; background: var(--green); border-radius: 50%; }
+  .hero h1 { font-size: 40px; font-weight: 700; letter-spacing: -0.8px; color: var(--text); margin-bottom: 14px; line-height: 1.2; }
+  .hero h1 span { color: var(--blue); }
+  .hero p { font-size: 17px; color: var(--text2); max-width: 600px; margin: 0 auto 32px; line-height: 1.7; }
+  .hero-actions { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
+  .btn { display: inline-flex; align-items: center; gap: 8px; padding: 10px 20px; border-radius: var(--radius); font-size: 14px; font-weight: 500; text-decoration: none; cursor: pointer; border: none; font-family: inherit; transition: opacity .15s; }
+  .btn:hover { opacity: 0.85; }
+  .btn-primary { background: var(--blue); color: #fff; }
+  .btn-secondary { background: var(--bg); color: var(--text); border: 1px solid var(--border); }
+  .btn svg { width: 16px; height: 16px; fill: currentColor; }
+
+  /* KPI STRIP */
+  .kpi-strip { display: grid; grid-template-columns: repeat(5, 1fr); border-bottom: 1px solid var(--border); }
+  .kpi-item { padding: 24px; border-right: 1px solid var(--border); text-align: center; }
+  .kpi-item:last-child { border-right: none; }
+  .kpi-num { font-size: 28px; font-weight: 700; color: var(--text); letter-spacing: -0.5px; }
+  .kpi-label { font-size: 12px; color: var(--text2); margin-top: 4px; }
+  .kpi-blue .kpi-num { color: var(--blue); }
+  .kpi-green .kpi-num { color: var(--green); }
+  .kpi-purple .kpi-num { color: var(--purple); }
+
+  /* SECTION */
+  section { padding: 48px 24px; max-width: 1100px; margin: 0 auto; }
+  .section-header { margin-bottom: 28px; }
+  .section-title { font-size: 22px; font-weight: 700; color: var(--text); margin-bottom: 6px; }
+  .section-sub { font-size: 14px; color: var(--text2); }
+  .section-divider { border: none; border-top: 1px solid var(--border2); margin: 0; }
+
+  /* CHARTS GRID */
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; }
+  .chart-card { background: var(--bg); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 20px; }
+  .chart-card-full { background: var(--bg); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 20px; margin-top: 16px; }
+  .chart-title { font-size: 13px; font-weight: 600; color: var(--text); margin-bottom: 4px; }
+  .chart-sub { font-size: 12px; color: var(--text2); margin-bottom: 16px; }
+
+  /* TABLE */
+  .table-wrap { overflow-x: auto; border: 1px solid var(--border); border-radius: var(--radius-lg); }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  th { text-align: left; padding: 10px 14px; font-weight: 600; color: var(--text2); font-size: 12px; background: var(--bg2); border-bottom: 1px solid var(--border); white-space: nowrap; }
+  td { padding: 10px 14px; border-bottom: 1px solid var(--border2); color: var(--text); vertical-align: middle; }
+  tr:last-child td { border-bottom: none; }
+  tr:hover td { background: var(--bg2); }
+  .repo-link { color: var(--blue); text-decoration: none; font-weight: 500; }
+  .repo-link:hover { text-decoration: underline; }
+
+  /* BADGES */
+  .badge { display: inline-block; padding: 2px 8px; border-radius: 20px; font-size: 11px; font-weight: 500; }
+  .badge-blue { background: #dbeafe; color: #1e40af; }
+  .badge-green { background: #dcfce7; color: #166534; }
+  .badge-red { background: #fee2e2; color: #991b1b; }
+  .badge-purple { background: #ede9fe; color: #5b21b6; }
+  .badge-amber { background: #fef3c7; color: #92400e; }
+  .badge-gray { background: var(--bg3); color: var(--text2); }
+  @media (prefers-color-scheme: dark) {
+    .badge-blue { background: #1e3a5f; color: #93c5fd; }
+    .badge-green { background: #14532d; color: #86efac; }
+    .badge-red { background: #450a0a; color: #fca5a5; }
+    .badge-purple { background: #2e1065; color: #c4b5fd; }
+    .badge-amber { background: #451a03; color: #fcd34d; }
+  }
+
+  /* STARS BAR */
+  .star-bar { display: flex; align-items: center; gap: 6px; }
+  .star-bar-track { flex: 1; max-width: 70px; height: 4px; background: var(--bg3); border-radius: 2px; overflow: hidden; }
+  .star-bar-fill { height: 100%; background: var(--blue); border-radius: 2px; }
+
+  /* STACK */
+  .stack-section { padding: 48px 24px; background: var(--bg2); border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); }
+  .stack-inner { max-width: 1100px; margin: 0 auto; }
+  .stack-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-top: 24px; }
+  .stack-card { background: var(--bg); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 20px; }
+  .stack-icon { width: 36px; height: 36px; border-radius: var(--radius); display: flex; align-items: center; justify-content: center; margin-bottom: 12px; font-size: 18px; }
+  .stack-name { font-weight: 600; font-size: 14px; color: var(--text); margin-bottom: 4px; }
+  .stack-desc { font-size: 12px; color: var(--text2); line-height: 1.5; }
+
+  /* ARCH */
+  .arch-section { padding: 48px 24px; }
+  .arch-inner { max-width: 1100px; margin: 0 auto; }
+  .arch-flow { display: flex; align-items: stretch; gap: 0; margin-top: 28px; border: 1px solid var(--border); border-radius: var(--radius-lg); overflow: hidden; }
+  .arch-step { flex: 1; padding: 20px; border-right: 1px solid var(--border); background: var(--bg2); }
+  .arch-step:last-child { border-right: none; background: var(--bg); }
+  .arch-step-num { font-size: 11px; font-weight: 600; color: var(--text2); margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.5px; }
+  .arch-step-title { font-size: 14px; font-weight: 600; color: var(--text); margin-bottom: 8px; }
+  .arch-step-items { list-style: none; }
+  .arch-step-items li { font-size: 12px; color: var(--text2); padding: 2px 0; display: flex; align-items: center; gap: 6px; }
+  .arch-step-items li::before { content: ''; width: 4px; height: 4px; background: var(--blue); border-radius: 50%; flex-shrink: 0; }
+
+  /* FOOTER */
+  footer { border-top: 1px solid var(--border); padding: 32px 24px; text-align: center; color: var(--text2); font-size: 13px; }
+  footer a { color: var(--blue); text-decoration: none; }
+
+  /* RESPONSIVE */
+  @media (max-width: 768px) {
+    .kpi-strip { grid-template-columns: repeat(3, 1fr); }
+    .grid-2, .grid-3, .stack-grid { grid-template-columns: 1fr; }
+    .arch-flow { flex-direction: column; }
+    .arch-step { border-right: none; border-bottom: 1px solid var(--border); }
+    .arch-step:last-child { border-bottom: none; }
+    .hero h1 { font-size: 28px; }
+    .nav-links { display: none; }
+  }
+</style>
+</head>
+<body>
+
+<nav>
+  <a class="nav-logo" href="#">
+    <svg viewBox="0 0 16 16"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>
+    GitHub Analytics
+  </a>
+  <div class="nav-links">
+    <button class="nav-link active" onclick="scrollTo('dashboard')">Dashboard</button>
+    <button class="nav-link" onclick="scrollTo('stack')">Stack</button>
+    <button class="nav-link" onclick="scrollTo('architecture')">Architecture</button>
+    <button class="nav-link" onclick="scrollTo('repos')">Top repos</button>
+  </div>
+  <span class="nav-badge">ELT Pipeline</span>
+</nav>
+
+<div class="hero">
+  <div class="hero-eyebrow"><span class="hero-eyebrow-dot"></span> Projet Data Analysis — 2025</div>
+  <h1>Analyse des <span>3 000</span> repos<br>GitHub les plus populaires</h1>
+  <p>Pipeline ELT complet en Python · 16 tables aggrégées · Feature engineering · Dashboard Power BI 5 pages</p>
+  <div class="hero-actions">
+    <a class="btn btn-primary" href="https://github.com/TON-USERNAME/github-analytics" target="_blank">
+      <svg viewBox="0 0 16 16"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>
+      Voir le code
+    </a>
+    <a class="btn btn-secondary" href="#dashboard">Explorer le dashboard</a>
+  </div>
+</div>
+
+<div class="kpi-strip">
+  <div class="kpi-item kpi-blue"><div class="kpi-num">2 562</div><div class="kpi-label">Repos analysés</div></div>
+  <div class="kpi-item"><div class="kpi-num">50M</div><div class="kpi-label">Stars totales</div></div>
+  <div class="kpi-item kpi-green"><div class="kpi-num">61.7%</div><div class="kpi-label">Repos actifs</div></div>
+  <div class="kpi-item kpi-purple"><div class="kpi-num">55</div><div class="kpi-label">Langages uniques</div></div>
+  <div class="kpi-item"><div class="kpi-num">15</div><div class="kpi-label">Domaines tech</div></div>
+</div>
+
+<hr class="section-divider" id="dashboard">
+<section>
+  <div class="section-header">
+    <div class="section-title">Dashboard analytique</div>
+    <div class="section-sub">Données réelles issues du pipeline ELT — 2 562 repos après déduplication et nettoyage</div>
+  </div>
+
+  <div class="grid-2">
+    <div class="chart-card">
+      <div class="chart-title">Stars totales par domaine</div>
+      <div class="chart-sub">Python domine avec 9.9M stars</div>
+      <div style="position:relative;height:260px"><canvas id="c1"></canvas></div>
+    </div>
+    <div class="chart-card">
+      <div class="chart-title">Stars moyens par repo</div>
+      <div class="chart-sub">Python a la plus forte moyenne : 59 621 par repo</div>
+      <div style="position:relative;height:260px"><canvas id="c2"></canvas></div>
+    </div>
+  </div>
+
+  <div class="chart-card-full">
+    <div class="chart-title">Évolution de la création de repos (2010 – 2026)</div>
+    <div class="chart-sub">Pic en 2016 · Recul depuis 2019 · Les nouveaux repos post-2022 ont plus de stars en moyenne</div>
+    <div style="position:relative;height:200px;margin-top:8px"><canvas id="c3"></canvas></div>
+  </div>
+
+  <div class="grid-2" style="margin-top:16px">
+    <div class="chart-card">
+      <div class="chart-title">Top 10 langages — nb de repos</div>
+      <div class="chart-sub">Python, Go et JavaScript en tête</div>
+      <div style="position:relative;height:260px"><canvas id="c4"></canvas></div>
+    </div>
+    <div class="chart-card">
+      <div class="chart-title">Activité par domaine</div>
+      <div class="chart-sub">Rust (92%) vs Web Development (32%)</div>
+      <div style="position:relative;height:260px"><canvas id="c5"></canvas></div>
+    </div>
+  </div>
+
+  <div class="chart-card-full">
+    <div class="chart-title">Top 20 topics les plus fréquents</div>
+    <div class="chart-sub">python · machine-learning · deep-learning dominent nettement</div>
+    <div style="position:relative;height:180px;margin-top:8px"><canvas id="c6"></canvas></div>
+  </div>
+</section>
+
+<hr class="section-divider" id="repos">
+<section>
+  <div class="section-header">
+    <div class="section-title">Top 15 repos par popularité</div>
+    <div class="section-sub">Classés par stars · Score = 60% stars + 25% forks + 15% topics</div>
+  </div>
+  <div class="table-wrap">
+    <table id="top-table">
+      <thead><tr>
+        <th>#</th><th>Repository</th><th>Domaine</th><th>Langage</th>
+        <th>Stars</th><th>Score</th><th>Statut</th>
+      </tr></thead>
+      <tbody id="top-body"></tbody>
+    </table>
+  </div>
+</section>
+
+<div class="stack-section" id="stack">
+  <div class="stack-inner">
+    <div class="section-header">
+      <div class="section-title">Stack technique</div>
+      <div class="section-sub">Des outils simples, maîtrisés, et 100% reproductibles</div>
+    </div>
+    <div class="stack-grid">
+      <div class="stack-card">
+        <div class="stack-icon" style="background:#dbeafe">🐍</div>
+        <div class="stack-name">Python + Pandas</div>
+        <div class="stack-desc">Pipeline ELT complet · Nettoyage, enrichissement, feature engineering · 12 colonnes calculées</div>
+      </div>
+      <div class="stack-card">
+        <div class="stack-icon" style="background:#dcfce7">🗄️</div>
+        <div class="stack-name">SQLite</div>
+        <div class="stack-desc">Persistance en 3 couches : raw_repos → processed_repos → 16 tables agrégées</div>
+      </div>
+      <div class="stack-card">
+        <div class="stack-icon" style="background:#ede9fe">📊</div>
+        <div class="stack-name">Power BI</div>
+        <div class="stack-desc">Dashboard 5 pages · Mesures DAX · Modèle de données relationnel · Palette GitHub</div>
+      </div>
+      <div class="stack-card">
+        <div class="stack-icon" style="background:#fef3c7">✅</div>
+        <div class="stack-name">pytest</div>
+        <div class="stack-desc">14 tests unitaires · Qualité des données · Couverture nettoyage + enrichissement</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="arch-section" id="architecture">
+  <div class="arch-inner">
+    <div class="section-header">
+      <div class="section-title">Architecture ELT</div>
+      <div class="section-sub">3 étapes · 3 couches de données · Principe ELT : charger d'abord, transformer ensuite</div>
+    </div>
+    <div class="arch-flow">
+      <div class="arch-step">
+        <div class="arch-step-num">Step 1</div>
+        <div class="arch-step-title">Extract</div>
+        <ul class="arch-step-items">
+          <li>Lecture CSV brute</li>
+          <li>3 000 lignes · 21 colonnes</li>
+          <li>Chargement dans raw_repos</li>
+          <li>Aucune transformation</li>
+        </ul>
+      </div>
+      <div class="arch-step">
+        <div class="arch-step-num">Step 2</div>
+        <div class="arch-step-title">Transform</div>
+        <ul class="arch-step-items">
+          <li>438 doublons supprimés</li>
+          <li>Typage dates, booléens</li>
+          <li>Parsing topics GitHub</li>
+          <li>Score popularité 0-100</li>
+          <li>Flags is_active / is_stale</li>
+        </ul>
+      </div>
+      <div class="arch-step">
+        <div class="arch-step-num">Step 3a</div>
+        <div class="arch-step-title">Staging</div>
+        <ul class="arch-step-items">
+          <li>stg_repos (2 562 lignes)</li>
+          <li>Toutes colonnes enrichies</li>
+          <li>Base pour Power BI</li>
+        </ul>
+      </div>
+      <div class="arch-step">
+        <div class="arch-step-num">Step 3b</div>
+        <div class="arch-step-title">Intermediate</div>
+        <ul class="arch-step-items">
+          <li>int_language_stats</li>
+          <li>int_domain_language</li>
+          <li>Réutilisables par les marts</li>
+        </ul>
+      </div>
+      <div class="arch-step" style="background:var(--bg)">
+        <div class="arch-step-num">Step 3c</div>
+        <div class="arch-step-title">Data Marts</div>
+        <ul class="arch-step-items">
+          <li>mart_kpis · mart_domain</li>
+          <li>mart_language · mart_license</li>
+          <li>mart_star_tier · mart_activity</li>
+          <li>mart_topics_frequency</li>
+          <li>mart_top_repos + 4 autres</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</div>
+
+<footer>
+  Projet réalisé avec Python · Pandas · SQLite · Power BI ·
+  <a href="https://github.com/TON-USERNAME/github-analytics" target="_blank">Voir le code sur GitHub</a>
+</footer>
+
+<script>
+const COLORS = {
+  blue:'#0969DA', green:'#1A7F37', red:'#CF222E',
+  purple:'#8250DF', amber:'#9A6700', gray:'#57606A',
+  teal:'#0F6E56', orange:'#EB6100',
+};
+const DOMAIN = [
+  {d:'Python',total:9956742,avg:59621,active:74.9,stale:10.8},{d:'Go',total:6570792,avg:33019,active:83.9,stale:9.5},
+  {d:'Machine Learning',total:5470414,avg:27352,active:57.0,stale:30.0},{d:'Rust',total:5108677,avg:26333,active:91.8,stale:5.7},
+  {d:'C++',total:4602947,avg:25715,active:78.2,stale:11.7},{d:'JavaScript',total:4340534,avg:22607,active:46.4,stale:40.6},
+  {d:'Android',total:3433187,avg:23515,active:69.9,stale:25.3},{d:'Java',total:3085116,avg:18255,active:53.3,stale:34.9},
+  {d:'Deep Learning',total:1709091,avg:20591,active:42.2,stale:43.4},{d:'DevOps',total:1400068,avg:7955,active:70.5,stale:17.0},
+];
+const LANG = [
+  {l:'Python',n:485},{l:'Go',n:330},{l:'JavaScript',n:289},{l:'Rust',n:243},
+  {l:'C++',n:235},{l:'Java',n:218},{l:'Unknown',n:208},{l:'TypeScript',n:114},
+  {l:'Jupyter NB',n:89},{l:'Swift',n:56},
+];
+const TREND = [
+  {y:2010,n:43},{y:2011,n:58},{y:2012,n:85},{y:2013,n:111},{y:2014,n:179},{y:2015,n:216},
+  {y:2016,n:264},{y:2017,n:249},{y:2018,n:258},{y:2019,n:212},{y:2020,n:196},{y:2021,n:174},
+  {y:2022,n:168},{y:2023,n:164},{y:2024,n:86},{y:2025,n:65},
+];
+const TOPICS = ['python','machine-learning','deep-learning','android','hacktoberfest','data-science','devops','ios','blockchain','cybersecurity','web-development','javascript','rust','go','golang','security','ai','kubernetes','java','pytorch'];
+const TOPIC_FREQ = [345,311,248,246,223,213,208,204,204,203,200,197,174,153,151,134,129,127,112,106];
+const TOP_REPOS = [
+  {r:1,name:'public-apis/public-apis',domain:'Python',lang:'Python',stars:409518,score:94.8,active:true},
+  {r:2,name:'EbookFoundation/free-programming-books',domain:'Python',lang:'Python',stars:383962,score:88.8,active:true},
+  {r:3,name:'donnemartin/system-design-primer',domain:'Python',lang:'Python',stars:338749,score:94.8,active:true},
+  {r:4,name:'vinta/awesome-python',domain:'Python',lang:'Python',stars:286998,score:89.5,active:true},
+  {r:5,name:'TheAlgorithms/Python',domain:'Python',lang:'Python',stars:218590,score:95.5,active:true},
+  {r:6,name:'trimstray/the-book-of-secret-knowledge',domain:'DevOps',lang:'Unknown',stars:209910,score:86.8,active:false},
+  {r:7,name:'tensorflow/tensorflow',domain:'Machine Learning',lang:'C++',stars:194126,score:91.0,active:true},
+  {r:8,name:'flutter/flutter',domain:'Android',lang:'Dart',stars:175549,score:99.2,active:true},
+  {r:9,name:'avelino/awesome-go',domain:'Go',lang:'Go',stars:167291,score:77.5,active:true},
+  {r:10,name:'ollama/ollama',domain:'Go',lang:'Go',stars:164983,score:86.1,active:true},
+  {r:11,name:'AUTOMATIC1111/stable-diffusion-webui',domain:'Deep Learning',lang:'Python',stars:161672,score:97.0,active:true},
+  {r:12,name:'huggingface/transformers',domain:'Machine Learning',lang:'Python',stars:157772,score:99.2,active:true},
+  {r:13,name:'f/prompts.chat',domain:'Machine Learning',lang:'HTML',stars:152186,score:93.4,active:true},
+  {r:14,name:'yt-dlp/yt-dlp',domain:'Python',lang:'Python',stars:151053,score:77.4,active:true},
+  {r:15,name:'airbnb/javascript',domain:'JavaScript',lang:'JavaScript',stars:148114,score:95.5,active:true},
+];
+
+const palDomain = [COLORS.blue,COLORS.teal,COLORS.purple,COLORS.green,COLORS.orange,COLORS.red,COLORS.amber,COLORS.gray,'#d1856a','#6366f1'];
+const opts = (extra={}) => ({ responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}}, ...extra });
+
+new Chart(document.getElementById('c1'), {
+  type:'bar',
+  data:{ labels:DOMAIN.map(d=>d.d), datasets:[{data:DOMAIN.map(d=>d.total), backgroundColor:palDomain, borderRadius:4}] },
+  options:{ ...opts(), scales:{x:{ticks:{font:{size:10},maxRotation:40}}, y:{ticks:{callback:v=>(v/1e6).toFixed(1)+'M', font:{size:11}}}} }
+});
+
+const byAvg = [...DOMAIN].sort((a,b)=>b.avg-a.avg);
+new Chart(document.getElementById('c2'), {
+  type:'bar',
+  data:{ labels:byAvg.map(d=>d.d), datasets:[{data:byAvg.map(d=>d.avg), backgroundColor:COLORS.purple, borderRadius:4}] },
+  options:{ indexAxis:'y', ...opts(), scales:{x:{ticks:{callback:v=>v>=1000?Math.round(v/1000)+'K':v, font:{size:11}}}, y:{ticks:{font:{size:11}}}} }
+});
+
+new Chart(document.getElementById('c3'), {
+  type:'line',
+  data:{ labels:TREND.map(t=>t.y), datasets:[{data:TREND.map(t=>t.n), borderColor:COLORS.blue, backgroundColor:'rgba(9,105,218,0.08)', fill:true, tension:0.4, pointRadius:3, pointBackgroundColor:COLORS.blue}] },
+  options:{ ...opts(), scales:{x:{ticks:{font:{size:11}}}, y:{ticks:{font:{size:11}}}} }
+});
+
+new Chart(document.getElementById('c4'), {
+  type:'bar',
+  data:{ labels:LANG.map(l=>l.l), datasets:[{data:LANG.map(l=>l.n), backgroundColor:COLORS.teal, borderRadius:4}] },
+  options:{ indexAxis:'y', ...opts(), scales:{x:{ticks:{font:{size:11}}}, y:{ticks:{font:{size:10}}}} }
+});
+
+const actSorted = [...DOMAIN].sort((a,b)=>b.active-a.active);
+new Chart(document.getElementById('c5'), {
+  type:'bar',
+  data:{ labels:actSorted.map(d=>d.d),
+    datasets:[
+      {label:'Actif',data:actSorted.map(d=>d.active),backgroundColor:COLORS.green,borderRadius:2,stack:'s'},
+      {label:'Interm.',data:actSorted.map(d=>Math.max(0,100-d.active-d.stale)),backgroundColor:'#d0d7de',borderRadius:0,stack:'s'},
+      {label:'Stale',data:actSorted.map(d=>d.stale),backgroundColor:COLORS.red,borderRadius:2,stack:'s'},
+    ]
+  },
+  options:{ indexAxis:'y', ...opts(), scales:{x:{stacked:true,max:100,ticks:{callback:v=>v+'%',font:{size:10}}}, y:{stacked:true,ticks:{font:{size:9}}}} }
+});
+
+new Chart(document.getElementById('c6'), {
+  type:'bar',
+  data:{ labels:TOPICS, datasets:[{data:TOPIC_FREQ, backgroundColor:COLORS.purple, borderRadius:3}] },
+  options:{ ...opts(), scales:{x:{ticks:{font:{size:9},maxRotation:40}}, y:{ticks:{font:{size:11}}}} }
+});
+
+const MAX_STARS = 409518;
+document.getElementById('top-body').innerHTML = TOP_REPOS.map(r => {
+  const pct = Math.round((r.stars / MAX_STARS) * 100);
+  const domClass = r.domain === 'Python' ? 'badge-blue' : r.domain.includes('Machine') || r.domain.includes('Deep') ? 'badge-purple' : r.domain === 'Go' || r.domain === 'Rust' ? 'badge-green' : 'badge-gray';
+  const starsK = r.stars >= 1000 ? (r.stars/1000).toFixed(1)+'K' : r.stars;
+  const activeBadge = r.active ? '<span class="badge badge-green">actif</span>' : '<span class="badge badge-red">stale</span>';
+  const scoreColor = r.score >= 90 ? COLORS.green : r.score >= 70 ? COLORS.amber : COLORS.gray;
+  return `<tr>
+    <td style="color:var(--text3);font-size:12px;font-weight:600">${r.r}</td>
+    <td><a class="repo-link" href="https://github.com/${r.name}" target="_blank">${r.name}</a></td>
+    <td><span class="badge ${domClass}">${r.domain}</span></td>
+    <td style="color:var(--text2)">${r.lang}</td>
+    <td>
+      <div class="star-bar">
+        <span style="font-weight:600;min-width:50px">${starsK}</span>
+        <div class="star-bar-track"><div class="star-bar-fill" style="width:${pct}%"></div></div>
+      </div>
+    </td>
+    <td><span style="font-weight:600;color:${scoreColor}">${r.score}</span></td>
+    <td>${activeBadge}</td>
+  </tr>`;
+}).join('');
+
+function scrollTo(id) {
+  document.getElementById(id)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  document.querySelectorAll('.nav-link').forEach(b => b.classList.remove('active'));
+  event.target.classList.add('active');
+}
+</script>
+</body>
+</html>
