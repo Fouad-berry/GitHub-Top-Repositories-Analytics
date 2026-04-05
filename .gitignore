@@ -1,0 +1,25 @@
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+env/
+
+# Données générées
+data/github_analytics.db
+data/processed/
+data/mart/
+
+# Logs et figures
+logs/
+analysis/figures/
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Env
+.env
