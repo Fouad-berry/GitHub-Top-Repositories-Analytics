@@ -180,8 +180,8 @@ github_analytics/
 
 ```bash
 # 1. Cloner
-git clone https://github.com/ton-username/github-analytics.git
-cd github-analytics
+git clone https://github.com/Fouad-berry/GitHub-Top-Repositories-Analytics.git
+cd GitHub-Top-Repositories-Analytics
 
 # 2. Environnement virtuel
 python -m venv venv
